@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
-import twitter4j.conf.ConfigurationBuilder;
+import twitter4j.*;
+
+import java.util.List;
 
 @RestController
 public class HelloController {
@@ -25,7 +27,21 @@ public class HelloController {
 	}
 
 	@GetMapping("/tweet")
-	public String tweet() {
-		return "I will tweet here";
+	public String tweet() throws TwitterException {
+		Twitter twitter = TwitterFactory.getSingleton();
+		Status status = twitter.updateStatus("This Tweet was created with Twitter Raptor");
+		return status.getText();
+	}
+
+	@GetMapping("timeline")
+	public String timeline() throws TwitterException {
+		Twitter twitter = TwitterFactory.getSingleton();
+		return twitter.getMentionsTimeline().toString();
+	}
+	@GetMapping("/mentions")
+	public String mentions() throws TwitterException {
+		Twitter twitter = TwitterFactory.getSingleton();
+		List<Status> statuses = twitter.getMentionsTimeline();
+		return statuses.toString();
 	}
 }
