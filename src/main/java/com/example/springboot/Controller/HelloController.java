@@ -1,7 +1,10 @@
 package com.example.springboot.Controller;
 
+import com.example.springboot.Application;
 import com.example.springboot.Entity.Mentions;
 import com.example.springboot.Repository.MentionsRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -15,6 +18,9 @@ import java.util.List;
 public class HelloController {
 	@Autowired
 	private MentionsRepository mentionsRepository;
+
+	private static final Logger logger= LoggerFactory.getLogger(Application.class);
+
 	@RequestMapping("/")
 	public String index() {
 		return "Greetings from Spring Boot!";
@@ -42,6 +48,13 @@ public class HelloController {
 	public String mentions() throws TwitterException {
 		Twitter twitter = TwitterFactory.getSingleton();
 		List<Status> statuses = twitter.getMentionsTimeline();
-		return statuses.toString();
+		for(Status status : statuses) {
+			String inReplyToScreenNAme = status.getInReplyToScreenName();
+			String inReplyToStatusId = String.valueOf(status.getInReplyToStatusId());
+			String tweetText = status.getText();
+			logger.info(inReplyToStatusId + " = " + inReplyToScreenNAme + "=" + tweetText);
+		}
+		//return statuses.toString();
+		return "ok";
 	}
 }
