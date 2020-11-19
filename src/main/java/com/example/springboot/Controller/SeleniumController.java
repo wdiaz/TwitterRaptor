@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -81,9 +83,13 @@ public class SeleniumController {
         driver.manage().window().maximize();
         driver.manage().timeouts().pageLoadTimeout(40, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
-        driver.get("about:reader?url=" + url);
+        //driver.get("about:reader?url=" + url);
+        driver.get(url);
+
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+
+
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
