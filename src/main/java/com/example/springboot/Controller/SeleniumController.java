@@ -1,11 +1,13 @@
 package com.example.springboot.Controller;
 
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.slf4j.Logger;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -69,6 +71,28 @@ public class SeleniumController {
         }
         driver.close();
         driver.quit();
+        return "ok";
+    }
+
+    @RequestMapping("ff")
+    public String ff(@RequestParam("url") String url) throws IOException {
+        System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver");
+        WebDriver driver = new FirefoxDriver();
+        driver.manage().window().maximize();
+        driver.manage().timeouts().pageLoadTimeout(40, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+        driver.get("about:reader?url=" + url);
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            this.logger.info(ex.getMessage());
+        }
+
+        File scrFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+        FileUtils.copyFile(scrFile, new File("./test-image.jpg"));
+
         return "ok";
     }
 }
