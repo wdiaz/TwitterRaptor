@@ -176,6 +176,6 @@ public class SeleniumController {
 
     @RequestMapping("aa")
     public String aa(@RequestParam("url") String url) throws IOException {
-        System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver")
+        System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver");
     }
 }
