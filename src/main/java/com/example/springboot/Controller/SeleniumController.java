@@ -1,5 +1,9 @@
 package com.example.springboot.Controller;
 
+import com.example.springboot.Service.Driver.DriverFactory;
+import com.example.springboot.Service.Driver.Types.Chrome;
+import com.example.springboot.Service.Driver.Types.IType;
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -47,7 +51,6 @@ public class SeleniumController {
         chromeOptions.addArguments("--enable-features=ReaderMode");
         chromeOptions.addArguments("--flag-switches-end");
 
-
         Map<String, String> mobileEmulation = new HashMap<>();
 
         //mobileEmulation.put("deviceName", "Galaxy S5");
@@ -77,10 +80,11 @@ public class SeleniumController {
             if (isScrollBarPresent) {
                 while (scrollHeight > 0 && fileIndex <= 6) {
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                    org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image" + fileIndex + ".jpg"));
+                    FileUtils.copyFile(srcFile, new File("/tmp/test-image" + fileIndex + ".jpg"));
                     int scrollTo = (int) clientHeight * fileIndex++;
                     jexec.executeScript("window.scrollTo(0," + scrollTo + ")");
                     scrollHeight = scrollHeight - clientHeight;
+                    logger.info("New scroll to: " + scrollTo);
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ex) {
@@ -154,7 +158,7 @@ public class SeleniumController {
             if (isScrollBarPresent) {
                 while (scrollHeight > 0) {
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                    org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image" + fileIndex + ".jpg"));
+                    FileUtils.copyFile(srcFile, new File("./test-image" + fileIndex + ".jpg"));
                     js.executeScript("window.scrollTo(0," + clientHeight * fileIndex++ + ")");
                     scrollHeight = scrollHeight - clientHeight;
 
@@ -167,7 +171,7 @@ public class SeleniumController {
                 }
             } else {
                 File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image.jpg"));
+                FileUtils.copyFile(srcFile, new File("./test-image.jpg"));
             }
         }
         return "ok";
@@ -181,6 +185,13 @@ public class SeleniumController {
     @RequestMapping("aa")
     public String aa(@RequestParam("url") String url) throws IOException {
         System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver");
+        return "ok";
+    }
+
+    @RequestMapping("ss1")
+    public String ss1(@RequestParam("url") String url) throws IOException {
+        IType chromeDriver = DriverFactory.create("chrome");
+        chromeDriver.shoot(url);
         return "ok";
     }
 }
