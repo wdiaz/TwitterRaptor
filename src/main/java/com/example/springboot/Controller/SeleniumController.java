@@ -9,12 +9,15 @@ import org.openqa.selenium.firefox.FirefoxProfile;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -29,9 +32,10 @@ public class SeleniumController {
     @RequestMapping("/ss")
     public String ss(@RequestParam("url") String url) throws IOException {
         logger = LoggerFactory.getLogger(SeleniumController.class);
-
-        System.setProperty("webdriver.chrome.driver", "/Users/wdiaz/Downloads/chromedriver");
-
+        Resource resource = new ClassPathResource("chromedriver");
+        InputStream input = resource.getInputStream();
+        File targetDriver = resource.getFile();
+        System.setProperty("webdriver.chrome.driver", targetDriver.toString());
 
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--flag-switches-begin");
@@ -96,10 +100,10 @@ public class SeleniumController {
     @RequestMapping("ff")
     public String ff(@RequestParam("url") String url) throws IOException {
         logger = LoggerFactory.getLogger(SeleniumController.class);
-
-
-        System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver");
-        //System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Desktop/driver/geckodriver-0.28.0/target/debug/geckodriver");
+        Resource resource = new ClassPathResource("geckodriver");
+        InputStream input = resource.getInputStream();
+        File targetDriver = resource.getFile();
+        System.setProperty("webdriver.gecko.driver", targetDriver.toString());
 
         String userAgent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16";
         FirefoxProfile firefoxProfile = new FirefoxProfile();
