@@ -1,10 +1,11 @@
 package com.example.springboot.Controller;
 
 import com.example.springboot.Application;
-import com.example.springboot.Entity.Mentions;
-import com.example.springboot.Repository.MentionsRepository;
+import com.example.springboot.Entity.Mention;
+import com.example.springboot.Repository.MentionRepository;
 import com.example.springboot.Service.Driver.DriverFactory;
 import com.example.springboot.Service.Driver.Types.IType;
+import com.example.springboot.Service.MentionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import twitter4j.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,7 +26,10 @@ import java.util.regex.Pattern;
 public class HelloController {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
     @Autowired
-    private MentionsRepository mentionsRepository;
+    private MentionRepository mentionsRepository;
+
+    @Autowired
+    private MentionService mentionService;
 
     @RequestMapping("/")
     public String index() {
@@ -33,7 +38,7 @@ public class HelloController {
 
     @GetMapping(path = "/all")
     public @ResponseBody
-    Iterable<Mentions> getAllMentions() {
+    Iterable<Mention> getAllMentions() {
         return mentionsRepository.findAll();
     }
 
@@ -58,66 +63,61 @@ public class HelloController {
         int page = 1;
         int totalTweets = page * 10;
         Paging paging = new Paging(1, totalTweets);
-        List<Status> statuses = twitter.getMentionsTimeline(paging);
+        List<Status> mentions = twitter.getMentionsTimeline(paging);
+
 
         int counter = 0;
-        for (Status status : statuses) {
-            String inReplyToScreenNAme = status.getInReplyToScreenName();
-            String inReplyToStatusId = String.valueOf(status.getInReplyToStatusId());
-            String tweetText = status.getText();
+        for (Status mention : mentions) {
+            String inReplyToStatusId = String.valueOf(mention.getInReplyToStatusId());
 
-
-            //logger.info("miguel: " + tweetText);
-
-
-            String regex = "\\bmira\\b";
+            Long requestorTweetId = mention.getId();
+            String tweetText = mention.getText();
+            String regex = "\\bscreenshot\\b";
             Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(tweetText);
             boolean screenshotRequest = matcher.find();
             if (screenshotRequest) {
-                logger.info("Screenshot Requested ");
-                logger.info("In reply to: " + status.getInReplyToStatusId());
-                Status inReplytoStatus = twitter.showStatus(status.getInReplyToStatusId());
-                logger.info("Twitter here" + inReplytoStatus.getText());
-                URLEntity[] urls = inReplytoStatus.getURLEntities();
+
+                if(mentionService.isRequestAlreadyFulfilled(String.valueOf(requestorTweetId), inReplyToStatusId)) {
+                    logger.info("r_id: " + inReplyToStatusId + ", " + requestorTweetId + " ALREADY FULFILLED");
+                    continue;
+                }
+
+                logger.info("tweet id to extract url from: " + inReplyToStatusId);
+                logger.info("requestor tweet id: " + requestorTweetId);
+                Status tweetToExtractUrlFrom = twitter.showStatus(mention.getInReplyToStatusId());
+
+
+                logger.info("Twitter here: " + tweetToExtractUrlFrom.getText());
+                URLEntity[] urls = tweetToExtractUrlFrom.getURLEntities();
+                String txt = tweetToExtractUrlFrom.getText();
 
 
                 String targetUrl = "";
                 for (URLEntity url : urls) {
+                    logger.info("url: " + url.getURL());
                     targetUrl = url.getURL();
                     break;
+
                 }
-                IType chromeDriver = DriverFactory.create("chrome");
+                if (targetUrl.isEmpty() ) {
+                    break;
+                }
+
+               IType chromeDriver = DriverFactory.create("chrome");
                 logger.info("The target url is: " + targetUrl);
                 chromeDriver.shoot(targetUrl);
 
-                Long requestFromTweetId = status.getId();
+                Long requestFromTweetId = mention.getId();
+                logger.info("full tweet from :" + mention.toString());
                 logger.info("Miguel Tweet ID" + requestFromTweetId);
 
-                String customMessage = "Aquí tienes tus capturas. Dile no al Click & Bait!. Gracias.";
+                String customMessage = "Here you have it. Thanks ";
                 Status s1 = twitter.showStatus(Long.parseLong(inReplyToStatusId));
-                String fullStatusMessage = customMessage + " @" + status.getUser().getScreenName() + " ";
-                //StatusUpdate statusUpdate = new StatusUpdate(" @" + status.getUser().getScreenName() + " " + customMessage);
 
-                long[] mediasId = new long[4];
+                logger.info("Target full tweet: " + s1.getId());
+                String fullStatusMessage = customMessage + " @" + mention.getUser().getScreenName() + " ";
 
-                String[] mediaFiles = {
-                        "/tmp/test-image1.jpg",
-                        "/tmp/test-image2.jpg",
-                        "/tmp/test-image3.jpg",
-                        "/tmp/test-image4.jpg"
-                };
-                /*int mediaCounter = 0;
-                for (String fileName : mediaFiles) {
-                    File mediaFile = new File(fileName);
-                    //statusUpdate.setMedia(mediaFile);
-                    File mediaFile = new File(fileName);
-                    UploadedMedia uploadedMedia = twitter.uploadMedia(mediaFile);
-                    mediasId[mediaCounter] = uploadedMedia.getMediaId();
-                    counter = counter + 1;
-                }
-                statusUpdate.setMediaIds(mediasId);
-                 */
                 File imagefile1 = new File("/tmp/test-image1.jpg");
                 File imagefile2 = new File("/tmp/test-image2.jpg");
                 File imagefile3 = new File("/tmp/test-image3.jpg");
@@ -138,21 +138,21 @@ public class HelloController {
                 StatusUpdate statusUpdate = new StatusUpdate(fullStatusMessage);
                 statusUpdate.setMediaIds(mediaIds);
 
-                Status reply = twitter.updateStatus(statusUpdate.inReplyToStatusId(status.getId()));
+                Status reply = twitter.updateStatus(statusUpdate.inReplyToStatusId(mention.getId()));
 
+                Mention tweetToStore = new Mention();
+                logger.info("Full text: " + tweetToExtractUrlFrom.getText());
+                tweetToStore.setRequestorTweetId(String.valueOf(requestorTweetId));
+                tweetToStore.setTargetTweetId(inReplyToStatusId);
+                tweetToStore.setFullText(tweetToExtractUrlFrom.getText());
+                tweetToStore.setTargetUrl(targetUrl);
+                tweetToStore.setRequestorScreenName(mention.getUser().getScreenName());
+                tweetToStore.setTargetScreenName(s1.getUser().getScreenName());
+                Date now = new Date();
+                tweetToStore.setCreatedAt(now);
+                mentionService.save(tweetToStore);
             }
-
-            /*logger.info("In reply to: " + status.getInReplyToStatusId());
-            Status inReplytoStatus = twitter.showStatus(status.getInReplyToStatusId());
-            logger.info("Twitter here" + inReplytoStatus.getText());
-            break;*/
-            /*URLEntity[] urls = status.getURLEntities();
-            for (URLEntity url : urls) {
-                logger.info("URL: " + url.getURL());
-            }
-            logger.info(++counter + " -> " + inReplyToStatusId + " = " + inReplyToScreenNAme + "=" + tweetText);*/
         }
-        //return statuses.toString();
         return "ok";
     }
 }
