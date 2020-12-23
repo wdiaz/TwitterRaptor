@@ -92,7 +92,6 @@ public class HelloController {
                 URLEntity[] urls = tweetToExtractUrlFrom.getURLEntities();
                 String txt = tweetToExtractUrlFrom.getText();
 
-
                 String targetUrl = "";
                 for (URLEntity url : urls) {
                     logger.info("url: " + url.getURL());
@@ -151,6 +150,11 @@ public class HelloController {
                 Date now = new Date();
                 tweetToStore.setCreatedAt(now);
                 mentionService.save(tweetToStore);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                      logger.info("Exception when waiting after mentions save");
+                }
             }
         }
         return "ok";
