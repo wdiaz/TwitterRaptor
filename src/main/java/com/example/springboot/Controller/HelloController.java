@@ -111,7 +111,7 @@ public class HelloController {
                 logger.info("full tweet from :" + mention.toString());
                 logger.info("Miguel Tweet ID" + requestFromTweetId);
 
-                String customMessage = "Here you have it. Thanks ";
+                String customMessage = "You got it!. Thanks. #SavedYouAClick";
                 Status s1 = twitter.showStatus(Long.parseLong(inReplyToStatusId));
 
                 logger.info("Target full tweet: " + s1.getId());
