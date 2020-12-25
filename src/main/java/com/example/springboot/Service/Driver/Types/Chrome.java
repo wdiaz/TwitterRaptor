@@ -48,6 +48,7 @@ public class Chrome implements IType {
         chromeOptions.addArguments("–start-maximized");
         chromeOptions.addArguments("--enable-features=ReaderMode");
         chromeOptions.addArguments("--flag-switches-end");
+
         Map<String, String> mobileEmulation = new HashMap<>();
         mobileEmulation.put("deviceName", "iPhone X");
         chromeOptions.setExperimentalOption("mobileEmulation", mobileEmulation);

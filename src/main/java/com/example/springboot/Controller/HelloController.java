@@ -19,8 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @RestController
 public class HelloController {
@@ -65,96 +63,85 @@ public class HelloController {
         Paging paging = new Paging(1, totalTweets);
         List<Status> mentions = twitter.getMentionsTimeline(paging);
 
-
-        int counter = 0;
         for (Status mention : mentions) {
+
             String inReplyToStatusId = String.valueOf(mention.getInReplyToStatusId());
+            if (inReplyToStatusId.isEmpty()) {
+                logger.info("nothing to take screenshots of");
+                break;
+            }
 
             Long requestorTweetId = mention.getId();
-            String tweetText = mention.getText();
-            String regex = "\\bscreenshot\\b";
-            Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(tweetText);
-            boolean screenshotRequest = matcher.find();
-            if (screenshotRequest) {
+            if (mentionService.isRequestAlreadyFulfilled(String.valueOf(requestorTweetId), inReplyToStatusId)) {
+                logger.info("r_id: " + inReplyToStatusId + ", " + requestorTweetId + " ALREADY FULFILLED");
+                continue;
+            }
+            Status tweetToExtractUrlFrom = twitter.showStatus(mention.getInReplyToStatusId());
+            URLEntity[] urls = tweetToExtractUrlFrom.getURLEntities();
+            if (urls.length == 0) {
+                logger.info("nothing to take screenshots of");
+                break;
+            }
 
-                if(mentionService.isRequestAlreadyFulfilled(String.valueOf(requestorTweetId), inReplyToStatusId)) {
-                    logger.info("r_id: " + inReplyToStatusId + ", " + requestorTweetId + " ALREADY FULFILLED");
-                    continue;
-                }
+            String targetUrl = "";
+            for (URLEntity url : urls) {
+                logger.info("url: " + url.getURL());
+                targetUrl = url.getURL();
+                break;
 
-                logger.info("tweet id to extract url from: " + inReplyToStatusId);
-                logger.info("requestor tweet id: " + requestorTweetId);
-                Status tweetToExtractUrlFrom = twitter.showStatus(mention.getInReplyToStatusId());
+            }
+            if (targetUrl.isEmpty()) {
+                break;
+            }
 
+            IType chromeDriver = DriverFactory.create("chrome");
+            chromeDriver.shoot(targetUrl);
+            String customMessage = "Tag me on a tweet and I will get back with screenshots!. Thanks. #SavedYouAClick";
+            Status s1 = twitter.showStatus(Long.parseLong(inReplyToStatusId));
+            String fullStatusMessage = customMessage + " @" + mention.getUser().getScreenName() + " ";
 
-                logger.info("Twitter here: " + tweetToExtractUrlFrom.getText());
-                URLEntity[] urls = tweetToExtractUrlFrom.getURLEntities();
-                String txt = tweetToExtractUrlFrom.getText();
+            File imagefile1 = new File("/tmp/test-image1.jpg");
+            File imagefile2 = new File("/tmp/test-image2.jpg");
+            File imagefile3 = new File("/tmp/test-image3.jpg");
+            File imagefile4 = new File("/tmp/test-image4.jpg");
 
-                String targetUrl = "";
-                for (URLEntity url : urls) {
-                    logger.info("url: " + url.getURL());
-                    targetUrl = url.getURL();
-                    break;
+            long[] mediaIds = new long[4];
+            UploadedMedia media1 = twitter.uploadMedia(imagefile1);
+            mediaIds[0] = media1.getMediaId();
 
-                }
-                if (targetUrl.isEmpty() ) {
-                    break;
-                }
+            UploadedMedia media2 = twitter.uploadMedia(imagefile2);
+            mediaIds[1] = media2.getMediaId();
 
-               IType chromeDriver = DriverFactory.create("chrome");
-                logger.info("The target url is: " + targetUrl);
-                chromeDriver.shoot(targetUrl);
+            UploadedMedia media3 = twitter.uploadMedia(imagefile3);
+            mediaIds[2] = media3.getMediaId();
 
-                Long requestFromTweetId = mention.getId();
-                logger.info("full tweet from :" + mention.toString());
-                logger.info("Miguel Tweet ID" + requestFromTweetId);
+            UploadedMedia media4 = twitter.uploadMedia(imagefile4);
+            mediaIds[3] = media4.getMediaId();
+            StatusUpdate statusUpdate = new StatusUpdate(fullStatusMessage);
+            statusUpdate.setMediaIds(mediaIds);
 
-                String customMessage = "You got it!. Thanks. #SavedYouAClick";
-                Status s1 = twitter.showStatus(Long.parseLong(inReplyToStatusId));
+            Status reply = twitter.updateStatus(statusUpdate.inReplyToStatusId(mention.getId()));
 
-                logger.info("Target full tweet: " + s1.getId());
-                String fullStatusMessage = customMessage + " @" + mention.getUser().getScreenName() + " ";
+            Mention tweetToStore = new Mention();
+            tweetToStore.setRequestorTweetId(String.valueOf(requestorTweetId));
+            tweetToStore.setTargetTweetId(inReplyToStatusId);
+            tweetToStore.setFullText(tweetToExtractUrlFrom.getText());
+            tweetToStore.setTargetUrl(targetUrl);
+            tweetToStore.setRequestorScreenName(mention.getUser().getScreenName());
+            tweetToStore.setTargetScreenName(s1.getUser().getScreenName());
+            Date now = new Date();
+            tweetToStore.setCreatedAt(now);
+            mentionService.save(tweetToStore);
 
-                File imagefile1 = new File("/tmp/test-image1.jpg");
-                File imagefile2 = new File("/tmp/test-image2.jpg");
-                File imagefile3 = new File("/tmp/test-image3.jpg");
-                File imagefile4 = new File("/tmp/test-image4.jpg");
+            /*imagefile1.delete();
+            imagefile2.delete();
+            imagefile3.delete();
+            imagefile4.delete();*/
 
-                long[] mediaIds = new long[4];
-                UploadedMedia media1 = twitter.uploadMedia(imagefile1);
-                mediaIds[0] = media1.getMediaId();
-
-                UploadedMedia media2 = twitter.uploadMedia(imagefile2);
-                mediaIds[1] = media2.getMediaId();
-
-                UploadedMedia media3 = twitter.uploadMedia(imagefile3);
-                mediaIds[2] = media3.getMediaId();
-
-                UploadedMedia media4 = twitter.uploadMedia(imagefile4);
-                mediaIds[3] = media4.getMediaId();
-                StatusUpdate statusUpdate = new StatusUpdate(fullStatusMessage);
-                statusUpdate.setMediaIds(mediaIds);
-
-                Status reply = twitter.updateStatus(statusUpdate.inReplyToStatusId(mention.getId()));
-
-                Mention tweetToStore = new Mention();
-                logger.info("Full text: " + tweetToExtractUrlFrom.getText());
-                tweetToStore.setRequestorTweetId(String.valueOf(requestorTweetId));
-                tweetToStore.setTargetTweetId(inReplyToStatusId);
-                tweetToStore.setFullText(tweetToExtractUrlFrom.getText());
-                tweetToStore.setTargetUrl(targetUrl);
-                tweetToStore.setRequestorScreenName(mention.getUser().getScreenName());
-                tweetToStore.setTargetScreenName(s1.getUser().getScreenName());
-                Date now = new Date();
-                tweetToStore.setCreatedAt(now);
-                mentionService.save(tweetToStore);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                      logger.info("Exception when waiting after mentions save");
-                }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                logger.info("Exception when waiting after mentions save");
             }
         }
         return "ok";
