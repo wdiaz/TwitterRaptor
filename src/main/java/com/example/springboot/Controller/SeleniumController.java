@@ -108,41 +108,28 @@ public class SeleniumController {
         InputStream input = resource.getInputStream();
         File targetDriver = resource.getFile();
         System.setProperty("webdriver.gecko.driver", targetDriver.toString());
-
-        String userAgent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16";
         FirefoxProfile firefoxProfile = new FirefoxProfile();
-        //firefoxProfile.setPreference("general.useragent.override", userAgent);
-
         FirefoxOptions firefoxOptions = new FirefoxOptions();
-
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability("Marionette", true);
-
         firefoxOptions.merge(capabilities);
-
         firefoxOptions.setProfile(firefoxProfile);
-
-        //firefoxOptions.setHeadless(true);
-
-        firefoxOptions.setCapability("os_version", "11");
-        firefoxOptions.setCapability("device", "iPhone 8 Plus");
-        firefoxOptions.setCapability("real_mobile", "true");
-        firefoxOptions.setCapability("browserstack.local", "false");
-
+        firefoxOptions.setHeadless(true);
         WebDriver driver = new FirefoxDriver(firefoxOptions);
         driver.manage().window().maximize();
         Dimension size = driver.manage().window().getSize();
-        Dimension d = new Dimension(600, size.getHeight());
+        Dimension d = new Dimension(600, 1400); //size.getHeight());
         driver.manage().window().setSize(d);
         driver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(50, TimeUnit.SECONDS);
         driver.get("about:reader?url=" + url);
         JavascriptExecutor js = (JavascriptExecutor) driver;
-        //boolean isScrollBarPresent = (boolean) js.executeScript("return document.documentElement.scrollHeight>document.documentElement.clientHeight");
-        //long scrollHeight = (long) js.executeScript("return document.documentElement.scrollHeight");
+        Thread.sleep(1000);
+        boolean isScrollBarPresent = (boolean) js.executeScript("return document.documentElement.scrollHeight>document.documentElement.clientHeight");
+        long scrollHeight = (long) js.executeScript("return document.documentElement.scrollHeight");
         long clientHeight = (long) js.executeScript("return document.documentElement.clientHeight");
-        long scrollHeight = clientHeight * 4;
-        boolean isScrollBarPresent = scrollHeight > clientHeight;
+        //logger.info("document.documentElement.scrollHeight: " + scrollHeight );
+        //logger.info("document.documentElement.clientHeight: " + clientHeight);
         int fileIndex = 1;
         if (driver instanceof FirefoxDriver) {
             if (isScrollBarPresent) {
