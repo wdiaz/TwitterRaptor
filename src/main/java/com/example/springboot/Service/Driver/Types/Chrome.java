@@ -90,7 +90,7 @@ public class Chrome implements IType {
                 }
             } else {
                 File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image.jpg"));
+                org.apache.commons.io.FileUtils.copyFile(srcFile, new File("/tmp/test-image.jpg"));
             }
         }
         driver.close();
