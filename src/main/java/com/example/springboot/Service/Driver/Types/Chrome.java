@@ -67,6 +67,7 @@ public class Chrome implements IType {
         if (driver instanceof ChromeDriver) {
             if (isScrollBarPresent) {
                 while (scrollHeight > 0 && fileIndex <= MAX_NUM_SCREENSHOTS) {
+                    Thread.sleep(1000);
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
                     String filename = "/tmp/image" + fileIndex + ".jpg";
                     fileMap.put(new File("/tmp/image" + fileIndex + ".jpg"), fileIndex);
@@ -74,8 +75,7 @@ public class Chrome implements IType {
                     int scrollTo = (int) clientHeight * fileIndex++;
                     jexec.executeScript("window.scrollTo(0," + scrollTo + ")");
                     scrollHeight = scrollHeight - clientHeight;
-                    logger.info("New scroll to: " + scrollTo);
-                    Thread.sleep(1000);
+
                 }
             } else {
                 File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
