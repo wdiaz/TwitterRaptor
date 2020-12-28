@@ -1,8 +1,6 @@
 package com.example.springboot.Service.Driver.Types;
 
-import com.example.springboot.Controller.SeleniumController;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.ClosedOutputStream;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -25,8 +23,8 @@ public class Chrome implements IType {
 
     private static final int MAX_NUM_SCREENSHOTS = 5;
     private final WebDriver driver;
-    private Logger logger;
-    private Map fileNames;
+    private final Logger logger;
+    private final Map<File, Integer> fileMap;
 
     public Chrome() {
         logger = LoggerFactory.getLogger(Chrome.class);
@@ -53,9 +51,10 @@ public class Chrome implements IType {
         mobileEmulation.put("deviceName", "iPhone X");
         chromeOptions.setExperimentalOption("mobileEmulation", mobileEmulation);
         driver = new ChromeDriver(chromeOptions);
+        fileMap = new HashMap<File, Integer>();
     }
 
-    public Boolean shoot(String url) throws IOException {
+    public Boolean shoot(String url) throws IOException, InterruptedException {
         driver.get(url);
         driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
         driver.manage().window().maximize();
@@ -65,36 +64,37 @@ public class Chrome implements IType {
         long scrollHeight = (long) jexec.executeScript("return document.documentElement.scrollHeight");
         long clientHeight = (long) jexec.executeScript("return document.documentElement.clientHeight");
         int fileIndex = 1;
-
-        logger.info("Client Height: " + clientHeight);
-        logger.info("Scroll Height: " + scrollHeight);
         clientHeight = clientHeight - (long) (clientHeight * 0.04);
-        logger.info("New Client Height: " + clientHeight);
-        Map<String, String> fileNames = new HashMap<>();
         if (driver instanceof ChromeDriver) {
             if (isScrollBarPresent) {
-                while (scrollHeight > 0 && fileIndex <= 6) {
+                while (scrollHeight > 0 && fileIndex <= 4) {
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                    String filename = "/tmp/test-image" + fileIndex + ".jpg";
-                    fileNames.put(String.valueOf(fileIndex), filename);
+                    String filename = "/tmp/image" + fileIndex + ".jpg";
+                    fileMap.put(new File("/tmp/image" + fileIndex + ".jpg"), fileIndex);
                     FileUtils.copyFile(srcFile, new File(filename));
                     int scrollTo = (int) clientHeight * fileIndex++;
                     jexec.executeScript("window.scrollTo(0," + scrollTo + ")");
                     scrollHeight = scrollHeight - clientHeight;
                     logger.info("New scroll to: " + scrollTo);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {
-                        logger.info(ex.getMessage());
-                    }
+                    Thread.sleep(1000);
                 }
             } else {
                 File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                org.apache.commons.io.FileUtils.copyFile(srcFile, new File("/tmp/test-image.jpg"));
+                FileUtils.copyFile(srcFile, new File("/tmp/image.jpg"));
             }
         }
-        driver.close();
-        driver.quit();
         return true;
+    }
+
+    public Map getFileMap() {
+        return fileMap;
+    }
+
+    public void close() {
+        driver.close();
+    }
+
+    public void quit() {
+        driver.quit();
     }
 }

@@ -1,7 +1,5 @@
 package com.example.springboot.Controller;
 
-import com.example.springboot.Service.Driver.DriverFactory;
-import com.example.springboot.Service.Driver.Types.IType;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -24,7 +22,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 @RestController
 public class SeleniumController {

@@ -6,13 +6,11 @@ import com.example.springboot.Repository.MentionRepository;
 import com.example.springboot.Service.Driver.DriverFactory;
 import com.example.springboot.Service.Driver.Types.IType;
 import com.example.springboot.Service.MentionService;
+import org.openqa.selenium.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import twitter4j.*;
 
 import java.io.File;
@@ -21,7 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
-public class HelloController {
+public class HomeController {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
     @Autowired
     private MentionRepository mentionsRepository;
@@ -54,14 +52,24 @@ public class HelloController {
     }
 
     @GetMapping("/mentions")
-    public String mentions() throws TwitterException, IOException {
+    public String mentions(@RequestParam("type") String type) throws TwitterException, IOException, InterruptedException {
         Twitter twitter = TwitterFactory.getSingleton();
-
 
         int page = 1;
         int totalTweets = page * 10;
         Paging paging = new Paging(1, totalTweets);
         List<Status> mentions = twitter.getMentionsTimeline(paging);
+        IType driver;
+        switch (type) {
+            case "chrome":
+                driver = DriverFactory.create("chrome");
+                break;
+            case "firefox":
+                driver = DriverFactory.create("firefox");
+                break;
+            default:
+                throw new InvalidArgumentException("Invalid Webdriver");
+        }
 
         for (Status mention : mentions) {
 
@@ -93,31 +101,23 @@ public class HelloController {
             if (targetUrl.isEmpty()) {
                 break;
             }
-
-            IType chromeDriver = DriverFactory.create("chrome");
-            chromeDriver.shoot(targetUrl);
+            driver.shoot(targetUrl);
             String customMessage = "Tag me on a tweet and I will get back with screenshots!. Thanks. #SavedYouAClick";
             Status s1 = twitter.showStatus(Long.parseLong(inReplyToStatusId));
             String fullStatusMessage = customMessage + " @" + mention.getUser().getScreenName() + " ";
-
-            File imagefile1 = new File("/tmp/test-image1.jpg");
-            File imagefile2 = new File("/tmp/test-image2.jpg");
-            File imagefile3 = new File("/tmp/test-image3.jpg");
-            File imagefile4 = new File("/tmp/test-image4.jpg");
-
-            long[] mediaIds = new long[4];
-            UploadedMedia media1 = twitter.uploadMedia(imagefile1);
-            mediaIds[0] = media1.getMediaId();
-
-            UploadedMedia media2 = twitter.uploadMedia(imagefile2);
-            mediaIds[1] = media2.getMediaId();
-
-            UploadedMedia media3 = twitter.uploadMedia(imagefile3);
-            mediaIds[2] = media3.getMediaId();
-
-            UploadedMedia media4 = twitter.uploadMedia(imagefile4);
-            mediaIds[3] = media4.getMediaId();
             StatusUpdate statusUpdate = new StatusUpdate(fullStatusMessage);
+
+            long[] mediaIds = new long[driver.getFileMap().size()];
+            logger.info("Size of filemap: " + driver.getFileMap().size());
+            driver.getFileMap().forEach((file, counter) -> {
+                int innerCounter = (Integer) counter;
+                try {
+                    UploadedMedia media = twitter.uploadMedia((File) file);
+                    mediaIds[--innerCounter] = media.getMediaId();
+                 } catch (TwitterException e) {
+                     e.printStackTrace();
+                 }
+            });
             statusUpdate.setMediaIds(mediaIds);
 
             Status reply = twitter.updateStatus(statusUpdate.inReplyToStatusId(mention.getId()));
@@ -131,18 +131,8 @@ public class HelloController {
             tweetToStore.setTargetScreenName(s1.getUser().getScreenName());
             Date now = new Date();
             tweetToStore.setCreatedAt(now);
-            mentionService.save(tweetToStore);
-
-            /*imagefile1.delete();
-            imagefile2.delete();
-            imagefile3.delete();
-            imagefile4.delete();*/
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                logger.info("Exception when waiting after mentions save");
-            }
+            //mentionService.save(tweetToStore);
+            Thread.sleep(1000);
         }
         return "ok";
     }

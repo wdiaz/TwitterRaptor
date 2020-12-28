@@ -4,5 +4,6 @@ import java.io.IOException;
 import java.util.Map;
 
 public interface IType {
-    public Boolean shoot(String url) throws IOException;
+    public Boolean shoot(String url) throws IOException, InterruptedException;
+    public Map getFileMap();
 }
