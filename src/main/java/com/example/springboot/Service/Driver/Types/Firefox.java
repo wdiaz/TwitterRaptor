@@ -29,7 +29,7 @@ public class Firefox implements IType {
     public Firefox() {
         logger = LoggerFactory.getLogger(SeleniumController.class);
         resource = new ClassPathResource("geckodriver");
-        fileMap = new HashMap<File, Integer>();
+        fileMap = new HashMap<>();
     }
 
     public Boolean shoot(String url) throws IOException, InterruptedException {

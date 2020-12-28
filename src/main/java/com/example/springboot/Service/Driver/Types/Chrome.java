@@ -20,8 +20,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Chrome implements IType {
-
-    private static final int MAX_NUM_SCREENSHOTS = 5;
+    private static final int MAX_NUM_SCREENSHOTS = 4;
     private final WebDriver driver;
     private final Logger logger;
     private final Map<File, Integer> fileMap;
@@ -51,7 +50,7 @@ public class Chrome implements IType {
         mobileEmulation.put("deviceName", "iPhone X");
         chromeOptions.setExperimentalOption("mobileEmulation", mobileEmulation);
         driver = new ChromeDriver(chromeOptions);
-        fileMap = new HashMap<File, Integer>();
+        fileMap = new HashMap<>();
     }
 
     public Boolean shoot(String url) throws IOException, InterruptedException {
@@ -67,7 +66,7 @@ public class Chrome implements IType {
         clientHeight = clientHeight - (long) (clientHeight * 0.04);
         if (driver instanceof ChromeDriver) {
             if (isScrollBarPresent) {
-                while (scrollHeight > 0 && fileIndex <= 4) {
+                while (scrollHeight > 0 && fileIndex <= MAX_NUM_SCREENSHOTS) {
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
                     String filename = "/tmp/image" + fileIndex + ".jpg";
                     fileMap.put(new File("/tmp/image" + fileIndex + ".jpg"), fileIndex);
