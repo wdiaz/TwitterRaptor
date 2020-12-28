@@ -9,12 +9,9 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -27,15 +24,7 @@ public class Chrome implements IType {
 
     public Chrome() {
         logger = LoggerFactory.getLogger(Chrome.class);
-        Resource resource = new ClassPathResource("chromedriver");
-        try {
-            InputStream input = resource.getInputStream();
-            File targetDriver = resource.getFile();
-            System.setProperty("webdriver.chrome.driver", targetDriver.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        System.setProperty("webdriver.chrome.driver", "/opt/drivers/chromedriver");
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--flag-switches-begin");
         chromeOptions.addArguments("--headless");

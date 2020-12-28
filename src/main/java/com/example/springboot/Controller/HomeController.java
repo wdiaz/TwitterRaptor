@@ -131,7 +131,9 @@ public class HomeController {
             tweetToStore.setTargetScreenName(s1.getUser().getScreenName());
             Date now = new Date();
             tweetToStore.setCreatedAt(now);
+
             mentionService.save(tweetToStore);
+
             Thread.sleep(1000);
         }
         return "ok";

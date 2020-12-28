@@ -33,9 +33,7 @@ public class Firefox implements IType {
     }
 
     public Boolean shoot(String url) throws IOException, InterruptedException {
-        InputStream input = resource.getInputStream();
-        File targetDriver = resource.getFile();
-        System.setProperty("webdriver.gecko.driver", targetDriver.toString());
+        System.setProperty("webdriver.gecko.driver", "/opt/drivers/geckodriver");
         FirefoxProfile firefoxProfile = new FirefoxProfile();
         FirefoxOptions firefoxOptions = new FirefoxOptions();
         DesiredCapabilities capabilities = new DesiredCapabilities();
