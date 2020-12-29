@@ -134,6 +134,8 @@ public class HomeController {
 
             mentionService.save(tweetToStore);
 
+            driver.quit();
+
             Thread.sleep(1000);
         }
         return "ok";
