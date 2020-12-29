@@ -36,12 +36,15 @@ public class Firefox implements IType {
         System.setProperty("webdriver.gecko.driver", "/opt/drivers/geckodriver");
         FirefoxProfile firefoxProfile = new FirefoxProfile();
         FirefoxOptions firefoxOptions = new FirefoxOptions();
+
+
+
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability("Marionette", true);
         firefoxOptions.merge(capabilities);
         firefoxOptions.setProfile(firefoxProfile);
         firefoxOptions.setHeadless(true);
-        WebDriver driver = new FirefoxDriver(firefoxOptions);
+        driver = new FirefoxDriver(firefoxOptions);
         driver.manage().window().maximize();
         Dimension size = driver.manage().window().getSize();
         Dimension d = new Dimension(600, 1400); //size.getHeight());
