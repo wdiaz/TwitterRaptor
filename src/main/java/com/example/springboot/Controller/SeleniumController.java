@@ -1,5 +1,6 @@
 package com.example.springboot.Controller;
 
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -9,12 +10,15 @@ import org.openqa.selenium.firefox.FirefoxProfile;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -29,9 +33,10 @@ public class SeleniumController {
     @RequestMapping("/ss")
     public String ss(@RequestParam("url") String url) throws IOException {
         logger = LoggerFactory.getLogger(SeleniumController.class);
-
-        System.setProperty("webdriver.chrome.driver", "/Users/wdiaz/Downloads/chromedriver");
-
+        Resource resource = new ClassPathResource("chromedriver");
+        InputStream input = resource.getInputStream();
+        File targetDriver = resource.getFile();
+        System.setProperty("webdriver.chrome.driver", targetDriver.toString());
 
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--flag-switches-begin");
@@ -42,7 +47,6 @@ public class SeleniumController {
         chromeOptions.addArguments("–start-maximized");
         chromeOptions.addArguments("--enable-features=ReaderMode");
         chromeOptions.addArguments("--flag-switches-end");
-
 
         Map<String, String> mobileEmulation = new HashMap<>();
 
@@ -73,10 +77,11 @@ public class SeleniumController {
             if (isScrollBarPresent) {
                 while (scrollHeight > 0 && fileIndex <= 6) {
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                    org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image" + fileIndex + ".jpg"));
+                    FileUtils.copyFile(srcFile, new File("/tmp/test-image" + fileIndex + ".jpg"));
                     int scrollTo = (int) clientHeight * fileIndex++;
                     jexec.executeScript("window.scrollTo(0," + scrollTo + ")");
                     scrollHeight = scrollHeight - clientHeight;
+                    logger.info("New scroll to: " + scrollTo);
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ex) {
@@ -94,88 +99,50 @@ public class SeleniumController {
     }
 
     @RequestMapping("ff")
-    public String ff(@RequestParam("url") String url) throws IOException {
+    public String ff(@RequestParam("url") String url) throws IOException, InterruptedException {
         logger = LoggerFactory.getLogger(SeleniumController.class);
-
-
-        System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver");
-        //System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Desktop/driver/geckodriver-0.28.0/target/debug/geckodriver");
-
-        String userAgent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16";
+        Resource resource = new ClassPathResource("geckodriver");
+        InputStream input = resource.getInputStream();
+        File targetDriver = resource.getFile();
+        System.setProperty("webdriver.gecko.driver", targetDriver.toString());
         FirefoxProfile firefoxProfile = new FirefoxProfile();
-        firefoxProfile.setPreference("general.useragent.override", userAgent);
-
         FirefoxOptions firefoxOptions = new FirefoxOptions();
-
         DesiredCapabilities capabilities = new DesiredCapabilities();
-        capabilities.setCapability("Marionette", false);
+        capabilities.setCapability("Marionette", true);
         firefoxOptions.merge(capabilities);
-
         firefoxOptions.setProfile(firefoxProfile);
-
-        //firefoxOptions.setHeadless(true);
-
-        /*firefoxOptions.setCapability("os_version", "11");
-        firefoxOptions.setCapability("device", "iPhone 8 Plus");
-        firefoxOptions.setCapability("real_mobile", "true");
-        firefoxOptions.setCapability("browserstack.local", "false");*/
-
+        firefoxOptions.setHeadless(true);
         WebDriver driver = new FirefoxDriver(firefoxOptions);
-
-        Dimension size = driver.manage().window().getSize();
-
-
-        logger.info("Window Height: " + size.getHeight());
-        logger.info("Window Width: " + size.getWidth());
-
         driver.manage().window().maximize();
-
-        driver.manage().timeouts().pageLoadTimeout(40, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
-        //driver.get("about:reader?url=" + url);
-        driver.get(url);
-
+        Dimension size = driver.manage().window().getSize();
+        Dimension d = new Dimension(600, 1400); //size.getHeight());
+        driver.manage().window().setSize(d);
+        driver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(50, TimeUnit.SECONDS);
+        driver.get("about:reader?url=" + url);
         JavascriptExecutor js = (JavascriptExecutor) driver;
+        Thread.sleep(1000);
         boolean isScrollBarPresent = (boolean) js.executeScript("return document.documentElement.scrollHeight>document.documentElement.clientHeight");
         long scrollHeight = (long) js.executeScript("return document.documentElement.scrollHeight");
         long clientHeight = (long) js.executeScript("return document.documentElement.clientHeight");
-
-        logger.info("isScrollBarPresent: " + isScrollBarPresent);
-        logger.info("scrollHeight: " + scrollHeight);
-        logger.info("clientHeight" + clientHeight);
-
-
+        //logger.info("document.documentElement.scrollHeight: " + scrollHeight );
+        //logger.info("document.documentElement.clientHeight: " + clientHeight);
         int fileIndex = 1;
         if (driver instanceof FirefoxDriver) {
             if (isScrollBarPresent) {
                 while (scrollHeight > 0) {
+                    Thread.sleep(1000);
                     File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                    org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image" + fileIndex + ".jpg"));
+                    FileUtils.copyFile(srcFile, new File("./test-image" + fileIndex + ".jpg"));
                     js.executeScript("window.scrollTo(0," + clientHeight * fileIndex++ + ")");
                     scrollHeight = scrollHeight - clientHeight;
-
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException ex) {
-                        logger.info(ex.getMessage());
-                    }
-
                 }
             } else {
+                Thread.sleep(1000);
                 File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                org.apache.commons.io.FileUtils.copyFile(srcFile, new File("./test-image.jpg"));
+                FileUtils.copyFile(srcFile, new File("./test-image.jpg"));
             }
         }
         return "ok";
-    }
-
-    @RequestMapping("ff2")
-    public String ff2(@RequestParam("url") String url) {
-        return "ok";
-    }
-
-    @RequestMapping("aa")
-    public String aa(@RequestParam("url") String url) throws IOException {
-        System.setProperty("webdriver.gecko.driver", "/Users/wdiaz/Downloads/geckodriver")
     }
 }

@@ -13,9 +13,10 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>spring-boot</name>
 	<description>Demo project for Spring Boot</description>
-
+	<packaging>war</packaging>
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>11</java.version>
+		<finalName>TwitterRaptor</finalName>
 	</properties>
 
 	<dependencies>
@@ -90,10 +91,6 @@
 			<groupId>org.seleniumhq.selenium</groupId>
 			<artifactId>selenium-firefox-driver</artifactId>
 			<version>3.141.59</version>
-		</dependency>
-		<dependency>
-			<groupId>org.seleniumhq.selenium</groupId>
-			<artifactId>selenium-chrome-driver</artifactId>
 		</dependency>
 	</dependencies>
 
