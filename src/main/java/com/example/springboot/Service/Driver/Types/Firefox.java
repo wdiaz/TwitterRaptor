@@ -53,7 +53,7 @@ public class Firefox implements IType {
         driver.manage().timeouts().implicitlyWait(50, TimeUnit.SECONDS);
         driver.get("about:reader?url=" + url);
         JavascriptExecutor js = (JavascriptExecutor) driver;
-        Thread.sleep(1000);
+        Thread.sleep(3000);
         boolean isScrollBarPresent = (boolean) js.executeScript("return document.documentElement.scrollHeight>document.documentElement.clientHeight");
         long scrollHeight = (long) js.executeScript("return document.documentElement.scrollHeight");
         long clientHeight = (long) js.executeScript("return document.documentElement.clientHeight");
@@ -80,6 +80,10 @@ public class Firefox implements IType {
 
     public Map getFileMap() {
         return fileMap;
+    }
+
+    public void emptyMap() {
+        fileMap.clear();
     }
 
     public void close() {

@@ -78,6 +78,10 @@ public class Chrome implements IType {
         return fileMap;
     }
 
+    public void emptyMap() {
+        fileMap.clear();
+    }
+
     public void close() {
         driver.close();
     }

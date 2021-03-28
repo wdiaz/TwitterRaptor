@@ -7,6 +7,7 @@ public interface IType {
     Boolean shoot(String url) throws IOException, InterruptedException;
     Map getFileMap();
 
+    void emptyMap();
     void close();
     void quit();
 }
