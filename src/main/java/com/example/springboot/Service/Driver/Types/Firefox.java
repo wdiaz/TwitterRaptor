@@ -14,7 +14,6 @@ import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +37,6 @@ public class Firefox implements IType {
         FirefoxOptions firefoxOptions = new FirefoxOptions();
 
 
-
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability("Marionette", true);
         firefoxOptions.merge(capabilities);
@@ -52,8 +50,25 @@ public class Firefox implements IType {
         driver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(50, TimeUnit.SECONDS);
         driver.get("about:reader?url=" + url);
+        Thread.sleep(10000);
         JavascriptExecutor js = (JavascriptExecutor) driver;
-        Thread.sleep(3000);
+
+        try {
+            WebElement e = driver.findElement(By.className("reader-message"));
+            if (!e.getText().isEmpty()) {
+                if (e.getText().equals("Failed to load article from page")) {
+                    logger.info("Geckodriver was not able to take screenshot. Request Passed. " + e.getText());
+                    return false;
+                }
+            } else if(e.getText().equals("Loading...")) {
+                Thread.sleep(3000);
+            }
+        } catch (Exception ex) {
+            // just ignore
+            logger.info("INFO: ---> " + ex.getMessage());
+        }
+
+
         boolean isScrollBarPresent = (boolean) js.executeScript("return document.documentElement.scrollHeight>document.documentElement.clientHeight");
         long scrollHeight = (long) js.executeScript("return document.documentElement.scrollHeight");
         long clientHeight = (long) js.executeScript("return document.documentElement.clientHeight");

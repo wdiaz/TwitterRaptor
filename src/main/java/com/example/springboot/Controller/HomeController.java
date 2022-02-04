@@ -56,7 +56,7 @@ public class HomeController {
         Twitter twitter = TwitterFactory.getSingleton();
 
         int page = 1;
-        int totalTweets = page * 30;
+        int totalTweets = page * 70;
         Paging paging = new Paging(1, totalTweets);
         List<Status> mentions = twitter.getMentionsTimeline(paging);
         IType driver;
@@ -108,7 +108,13 @@ public class HomeController {
                     break;
                 }
                 driver.shoot(targetUrl);
-                String customMessage = "Tag me on a tweet and I will get back with screenshots!. Thanks. #SavedYouAClick";
+
+                if(driver.getFileMap().size() == 0) {
+                    logger.info("No tweet uploaded. Only one screenshot");
+                    continue;
+                }
+
+                String customMessage = "Reply to tweets with external urls and I will get back with screenshots!. Thanks. #SavedYouAClick ";
                 Status s1 = twitter.showStatus(targetTweetId);
                 String fullStatusMessage = customMessage + " @" + mention.getUser().getScreenName() + " ";
                 StatusUpdate statusUpdate = new StatusUpdate(fullStatusMessage);
@@ -138,7 +144,7 @@ public class HomeController {
                 Date now = new Date();
                 tweetToStore.setCreatedAt(now);
                 mentionService.save(tweetToStore);
-                driver.quit();
+                driver.close();
                 Thread.sleep(1000);
             } catch (TwitterException ex) {
                 logger.info(ex.getMessage() + ". Target Tweet Id: " + targetTweetId );
